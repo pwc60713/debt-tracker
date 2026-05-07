@@ -466,8 +466,9 @@ function fmtDate(d) { return d ? d.replace(/-/g,'/') : ''; }
 
 // ── render ────────────────────────────────────────────
 function render() {
-  const mom = records.filter(r => r.who === 'mom');
-  const bf  = records.filter(r => r.who === 'bf');
+  const sortOldFirst = (a, b) => (a.date || '').localeCompare(b.date || '');
+  const mom = records.filter(r => r.who === 'mom').sort(sortOldFirst);
+  const bf  = records.filter(r => r.who === 'bf').sort(sortOldFirst);
 
   renderSummary(mom, bf);
   renderList('mom', mom);
