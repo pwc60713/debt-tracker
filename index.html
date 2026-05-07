@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="color-scheme" content="light">
+<title>還錢紀錄</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+:root {
+  --bg: #f0f4f8;
+  --surface: #f8fafc;
+  --surface2: #e4ecf4;
+  --border: rgba(80,120,180,0.15);
+  --text: #1a2a3a;
+  --text-muted: rgba(40,80,120,0.5);
+  --accent-mom: #c0604a;
+  --accent-mom-light: rgba(192,96,74,0.1);
+  --accent-mom-dim: rgba(192,96,74,0.06);
+  --accent-bf: #3a7fa8;
+  --accent-bf-light: rgba(58,127,168,0.1);
+  --accent-bf-dim: rgba(58,127,168,0.06);
+  --ok: #2e9e6e;
+  --ok-light: rgba(46,158,110,0.1);
+  --danger: #d94f4f;
+  --danger-light: rgba(217,79,79,0.1);
+}
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, 'Helvetica Neue', sans-serif;
+  min-height: 100vh;
+  padding-top: max(44px, env(safe-area-inset-top));
+  padding-bottom: max(100px, env(safe-area-inset-bottom));
+}
+
+/* Header */
+.header {
+  padding: 14px 16px 0;
+  display: flex; align-items: flex-start; justify-content: space-between;
+}
+.header-left .title { font-size: 22px; font-weight: 300; letter-spacing: -0.02em; }
+.header-left .subtitle { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+.add-fab {
+  width: 40px; height: 40px;
+  border-radius: 12px;
+  background: var(--text);
+  border: none;
+  color: #fff;
+  font-size: 22px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  -webkit-appearance: none;
+  flex-shrink: 0;
+}
+
+/* Summary cards */
+.summary-row {
+  display: flex;
+  gap: 10px;
+  padding: 16px 16px 0;
+}
+.summary-card {
+  flex: 1;
+  background: var(--surface);
+  border-radius: 16px;
+  padding: 14px;
+  border: 1px solid var(--border);
+}
+.summary-card .who {
+  font-size: 12px;
+  font-weight: 500;
+  margin-bottom: 6px;
+  display: flex; align-items: center; gap: 5px;
+}
+.summary-card .who .dot {
+  width: 7px; height: 7px; border-radius: 50%;
+}
+.summary-card.mom .who { color: var(--accent-mom); }
+.summary-card.mom .dot { background: var(--accent-mom); }
+.summary-card.bf .who { color: var(--accent-bf); }
+.summary-card.bf .dot { background: var(--accent-bf); }
+.summary-card .amount {
+  font-size: 22px;
+  font-weight: 300;
+  letter-spacing: -0.03em;
+  color: var(--text);
+}
+.summary-card .amount span { font-size: 13px; font-weight: 400; color: var(--text-muted); margin-left: 2px; }
+.summary-card .paid-info {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.total-bar {
+  margin: 10px 16px 0;
+  background: var(--surface);
+  border-radius: 12px;
+  padding: 11px 14px;
+  border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.total-bar .label { font-size: 12px; color: var(--text-muted); }
+.total-bar .val { font-size: 16px; font-weight: 500; color: var(--text); }
+.total-bar .val.clear { color: var(--ok); }
+
+/* Section header */
+.section-header {
+  padding: 18px 16px 8px;
+  display: flex; align-items: center; gap: 8px;
+}
+.section-header .dot {
+  width: 8px; height: 8px; border-radius: 50%;
+}
+.section-header .label { font-size: 13px; font-weight: 500; }
+.section-header .count {
+  font-size: 11px;
+  color: var(--text-muted);
+  background: var(--surface2);
+  border-radius: 20px;
+  padding: 1px 8px;
+  margin-left: auto;
+}
+.section-header.mom .dot { background: var(--accent-mom); }
+.section-header.mom .label { color: var(--accent-mom); }
+.section-header.bf .dot { background: var(--accent-bf); }
+.section-header.bf .label { color: var(--accent-bf); }
+
+/* Record card */
+.record-list { padding: 0 16px; display: flex; flex-direction: column; gap: 8px; }
+.record-card {
+  background: var(--surface);
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+.record-main {
+  padding: 12px 14px;
+  display: flex; align-items: flex-start; gap: 10px;
+  cursor: pointer;
+}
+.record-main .info { flex: 1; min-width: 0; }
+.record-main .reason {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.record-main .date-row {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+.record-main .amounts {
+  text-align: right;
+  flex-shrink: 0;
+}
+.record-main .total-amount {
+  font-size: 15px;
+  font-weight: 400;
+  color: var(--text);
+}
+.record-main .remain {
+  font-size: 11px;
+  margin-top: 2px;
+  font-weight: 500;
+}
+.record-main .remain.owe { color: var(--danger); }
+.record-main .remain.clear { color: var(--ok); }
+
+.record-card .progress-bar {
+  height: 3px;
+  background: var(--surface2);
+}
+.record-card .progress-fill {
+  height: 100%;
+  transition: width 0.3s ease;
+}
+.record-card.mom .progress-fill { background: var(--accent-mom); }
+.record-card.bf .progress-fill { background: var(--accent-bf); }
+
+/* Expand area */
+.record-detail {
+  display: none;
+  border-top: 1px solid var(--border);
+  padding: 10px 14px 12px;
+  background: var(--bg);
+}
+.record-detail.open { display: block; }
+.repay-list { margin-bottom: 8px; }
+.repay-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+.repay-item:last-child { border-bottom: none; }
+.repay-item .repay-date { color: var(--text-muted); font-size: 11px; }
+.repay-item .repay-amt { font-weight: 500; color: var(--ok); }
+.repay-item .del-repay {
+  background: none; border: none; color: var(--text-muted);
+  font-size: 15px; cursor: pointer; padding: 0 4px;
+}
+.no-repay { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; }
+
+.detail-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.detail-btn {
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 12px;
+  cursor: pointer;
+  font-family: inherit;
+  -webkit-appearance: none;
+}
+.detail-btn.primary { background: var(--text); color: #fff; border-color: var(--text); }
+.detail-btn.danger { color: var(--danger); border-color: rgba(217,79,79,0.3); }
+
+/* Empty state */
+.empty { text-align: center; padding: 24px 0; color: var(--text-muted); font-size: 13px; }
+
+/* Bottom sheet overlay */
+.overlay {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.35);
+  z-index: 100;
+  align-items: flex-end;
+  justify-content: center;
+}
+.overlay.open { display: flex; }
+.sheet {
+  background: var(--surface);
+  border-radius: 20px 20px 0 0;
+  padding: 0 0 max(20px, env(safe-area-inset-bottom));
+  width: 100%;
+  max-width: 600px;
+  animation: slideUp 0.22s ease;
+}
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+.sheet-handle {
+  width: 36px; height: 4px;
+  background: var(--surface2);
+  border-radius: 2px;
+  margin: 10px auto 0;
+}
+.sheet-title {
+  font-size: 15px;
+  font-weight: 500;
+  padding: 14px 18px 0;
+  color: var(--text);
+}
+.sheet-body { padding: 14px 18px; display: flex; flex-direction: column; gap: 10px; }
+.field-label { font-size: 11px; color: var(--text-muted); margin-bottom: 4px; }
+.field-input {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 15px;
+  color: var(--text);
+  font-family: inherit;
+  outline: none;
+  -webkit-appearance: none;
+}
+.field-input:focus { border-color: rgba(80,120,180,0.4); }
+.seg-row { display: flex; gap: 8px; }
+.seg-btn {
+  flex: 1;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-muted);
+  font-size: 14px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+  -webkit-appearance: none;
+}
+.seg-btn.active.mom { background: var(--accent-mom-light); border-color: var(--accent-mom); color: var(--accent-mom); font-weight: 500; }
+.seg-btn.active.bf  { background: var(--accent-bf-light);  border-color: var(--accent-bf);  color: var(--accent-bf);  font-weight: 500; }
+
+.sheet-confirm {
+  margin: 0 18px;
+  width: calc(100% - 36px);
+  padding: 13px;
+  border-radius: 12px;
+  border: none;
+  background: var(--text);
+  color: #fff;
+  font-size: 15px;
+  font-family: inherit;
+  cursor: pointer;
+  -webkit-appearance: none;
+}
+
+/* Confirm delete */
+.confirm-sheet .sheet-body { gap: 6px; }
+.confirm-msg { font-size: 14px; color: var(--text); }
+.confirm-sub { font-size: 12px; color: var(--text-muted); }
+.confirm-actions { display: flex; gap: 8px; padding: 0 18px 4px; }
+.confirm-btn {
+  flex: 1; padding: 13px;
+  border-radius: 12px;
+  border: none; font-size: 15px;
+  font-family: inherit; cursor: pointer;
+  -webkit-appearance: none;
+}
+.confirm-btn.cancel { background: var(--surface2); color: var(--text); }
+.confirm-btn.del { background: var(--danger); color: #fff; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div class="title">💸 還錢紀錄</div>
+    <div class="subtitle" id="header-sub">計算中...</div>
+  </div>
+  <button class="add-fab" id="add-btn">＋</button>
+</div>
+
+<!-- Summary -->
+<div class="summary-row">
+  <div class="summary-card mom" id="sum-mom">
+    <div class="who"><span class="dot"></span>媽媽</div>
+    <div class="amount" id="sum-mom-amt">0 <span>元</span></div>
+    <div class="paid-info" id="sum-mom-paid"></div>
+  </div>
+  <div class="summary-card bf" id="sum-bf">
+    <div class="who"><span class="dot"></span>男友</div>
+    <div class="amount" id="sum-bf-amt">0 <span>元</span></div>
+    <div class="paid-info" id="sum-bf-paid"></div>
+  </div>
+</div>
+<div class="total-bar">
+  <span class="label">總共還欠</span>
+  <span class="val" id="total-val">0 元</span>
+</div>
+
+<!-- Mom records -->
+<div class="section-header mom">
+  <div class="dot"></div>
+  <div class="label">媽媽</div>
+  <div class="count" id="count-mom">0 筆</div>
+</div>
+<div class="record-list" id="list-mom"></div>
+
+<!-- BF records -->
+<div class="section-header bf">
+  <div class="dot"></div>
+  <div class="label">男友</div>
+  <div class="count" id="count-bf">0 筆</div>
+</div>
+<div class="record-list" id="list-bf"></div>
+
+<!-- Export/Import -->
+<div style="display:flex;gap:8px;padding:20px 16px 0;">
+  <button class="detail-btn" id="export-btn" style="flex:1;">匯出備份</button>
+  <label class="detail-btn" for="import-input" style="flex:1;text-align:center;cursor:pointer;">匯入備份</label>
+  <input type="file" id="import-input" accept=".json" style="display:none;">
+</div>
+
+<!-- Add sheet -->
+<div class="overlay" id="add-overlay">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">新增借款</div>
+    <div class="sheet-body">
+      <div>
+        <div class="field-label">借款對象</div>
+        <div class="seg-row">
+          <button class="seg-btn mom" data-who="mom" id="seg-mom">媽媽</button>
+          <button class="seg-btn bf"  data-who="bf"  id="seg-bf">男友</button>
+        </div>
+      </div>
+      <div>
+        <div class="field-label">金額（元）</div>
+        <input class="field-input" type="number" id="f-amount" placeholder="0" inputmode="numeric">
+      </div>
+      <div>
+        <div class="field-label">原因 / 備註</div>
+        <input class="field-input" type="text" id="f-reason" placeholder="借這筆的原因">
+      </div>
+      <div>
+        <div class="field-label">借款日期</div>
+        <input class="field-input" type="date" id="f-date">
+      </div>
+    </div>
+    <button class="sheet-confirm" id="add-confirm">確認新增</button>
+  </div>
+</div>
+
+<!-- Repay sheet -->
+<div class="overlay" id="repay-overlay">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title" id="repay-title">還款紀錄</div>
+    <div class="sheet-body">
+      <div>
+        <div class="field-label">還款金額（元）</div>
+        <input class="field-input" type="number" id="r-amount" placeholder="0" inputmode="numeric">
+      </div>
+      <div>
+        <div class="field-label">還款日期</div>
+        <input class="field-input" type="date" id="r-date">
+      </div>
+    </div>
+    <button class="sheet-confirm" id="repay-confirm">確認還款</button>
+  </div>
+</div>
+
+<!-- Delete confirm sheet -->
+<div class="overlay" id="del-overlay">
+  <div class="sheet confirm-sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-body">
+      <div class="confirm-msg">確定要刪除這筆借款嗎？</div>
+      <div class="confirm-sub" id="del-sub"></div>
+    </div>
+    <div class="confirm-actions">
+      <button class="confirm-btn cancel" id="del-cancel">取消</button>
+      <button class="confirm-btn del" id="del-confirm">刪除</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const KEY = 'pipi_debt_v1';
+
+function load() {
+  try { const s = localStorage.getItem(KEY); if (s) return JSON.parse(s); } catch(e) {}
+  return [];
+}
+function save() {
+  try { localStorage.setItem(KEY, JSON.stringify(records)); } catch(e) {}
+}
+
+let records = load();
+let nextId = records.reduce((m,r) => Math.max(m, r.id||0), 0) + 1;
+let activeId = null;
+let repayTargetId = null;
+
+// ── helpers ──────────────────────────────────────────
+function remain(r) {
+  const paid = (r.repayments||[]).reduce((s,p) => s + p.amount, 0);
+  return r.amount - paid;
+}
+function totalPaid(r) {
+  return (r.repayments||[]).reduce((s,p) => s + p.amount, 0);
+}
+function fmt(n) { return n.toLocaleString('zh-TW'); }
+function today() { return new Date().toISOString().split('T')[0]; }
+function fmtDate(d) { return d ? d.replace(/-/g,'/') : ''; }
+
+// ── render ────────────────────────────────────────────
+function render() {
+  const mom = records.filter(r => r.who === 'mom');
+  const bf  = records.filter(r => r.who === 'bf');
+
+  renderSummary(mom, bf);
+  renderList('mom', mom);
+  renderList('bf', bf);
+}
+
+function renderSummary(mom, bf) {
+  const momOwed = mom.reduce((s,r) => s + remain(r), 0);
+  const bfOwed  = bf.reduce((s,r)  => s + remain(r), 0);
+  const total = momOwed + bfOwed;
+
+  document.getElementById('sum-mom-amt').innerHTML = `${fmt(momOwed)} <span>元</span>`;
+  document.getElementById('sum-bf-amt').innerHTML  = `${fmt(bfOwed)} <span>元</span>`;
+
+  const momTotal = mom.reduce((s,r) => s + r.amount, 0);
+  const bfTotal  = bf.reduce((s,r)  => s + r.amount, 0);
+  const momPaid  = mom.reduce((s,r) => s + totalPaid(r), 0);
+  const bfPaid   = bf.reduce((s,r)  => s + totalPaid(r), 0);
+
+  document.getElementById('sum-mom-paid').textContent = momTotal ? `已還 ${fmt(momPaid)} / 共借 ${fmt(momTotal)}` : '尚未有借款';
+  document.getElementById('sum-bf-paid').textContent  = bfTotal  ? `已還 ${fmt(bfPaid)} / 共借 ${fmt(bfTotal)}`  : '尚未有借款';
+
+  const totalEl = document.getElementById('total-val');
+  totalEl.textContent = total ? `${fmt(total)} 元` : '🎉 都還清了！';
+  totalEl.className = 'val' + (total === 0 && records.length > 0 ? ' clear' : '');
+
+  const sub = document.getElementById('header-sub');
+  sub.textContent = total ? `還欠 ${fmt(total)} 元` : records.length ? '已全部還清 🎉' : '點 ＋ 新增借款';
+}
+
+function renderList(who, list) {
+  const el = document.getElementById('list-' + who);
+  const countEl = document.getElementById('count-' + who);
+  countEl.textContent = list.length + ' 筆';
+
+  if (!list.length) {
+    el.innerHTML = '<div class="empty">暫無借款紀錄</div>';
+    return;
+  }
+
+  el.innerHTML = '';
+  list.forEach(r => {
+    const rem = remain(r);
+    const paid = totalPaid(r);
+    const pct = r.amount ? Math.min(100, Math.round(paid / r.amount * 100)) : 0;
+    const card = document.createElement('div');
+    card.className = 'record-card ' + who;
+    card.dataset.id = r.id;
+
+    card.innerHTML = `
+      <div class="record-main">
+        <div class="info">
+          <div class="reason">${r.reason || '無備註'}</div>
+          <div class="date-row">${fmtDate(r.date)}</div>
+        </div>
+        <div class="amounts">
+          <div class="total-amount">${fmt(r.amount)} 元</div>
+          <div class="remain ${rem <= 0 ? 'clear' : 'owe'}">${rem <= 0 ? '✓ 已還清' : `還欠 ${fmt(rem)}`}</div>
+        </div>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+      <div class="record-detail" id="detail-${r.id}">
+        <div class="repay-list" id="repays-${r.id}"></div>
+        <div class="detail-actions">
+          ${rem > 0 ? `<button class="detail-btn primary repay-btn" data-id="${r.id}">＋ 還款</button>` : ''}
+          <button class="detail-btn danger del-btn" data-id="${r.id}">刪除此筆</button>
+        </div>
+      </div>
+    `;
+    el.appendChild(card);
+    renderRepays(r);
+
+    card.querySelector('.record-main').addEventListener('click', () => {
+      const detail = document.getElementById('detail-' + r.id);
+      detail.classList.toggle('open');
+    });
+  });
+
+  // bind buttons
+  el.querySelectorAll('.repay-btn').forEach(btn => {
+    btn.addEventListener('click', e => { e.stopPropagation(); openRepay(parseInt(btn.dataset.id)); });
+  });
+  el.querySelectorAll('.del-btn').forEach(btn => {
+    btn.addEventListener('click', e => { e.stopPropagation(); openDel(parseInt(btn.dataset.id)); });
+  });
+}
+
+function renderRepays(r) {
+  const el = document.getElementById('repays-' + r.id);
+  if (!el) return;
+  if (!r.repayments || !r.repayments.length) {
+    el.innerHTML = '<div class="no-repay">尚未還款</div>';
+    return;
+  }
+  el.innerHTML = r.repayments.map((p,i) => `
+    <div class="repay-item">
+      <span class="repay-date">${fmtDate(p.date)}</span>
+      <span class="repay-amt">＋${fmt(p.amount)} 元</span>
+      <button class="del-repay" data-rid="${r.id}" data-idx="${i}">✕</button>
+    </div>
+  `).join('');
+
+  el.querySelectorAll('.del-repay').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const rid = parseInt(btn.dataset.rid);
+      const idx = parseInt(btn.dataset.idx);
+      if (!confirm('刪除這筆還款紀錄？')) return;
+      const rec = records.find(r => r.id === rid);
+      if (rec) { rec.repayments.splice(idx, 1); save(); render(); }
+    });
+  });
+}
+
+// ── add sheet ─────────────────────────────────────────
+let selectedWho = 'mom';
+
+document.getElementById('add-btn').addEventListener('click', () => {
+  selectedWho = 'mom';
+  updateSeg();
+  document.getElementById('f-amount').value = '';
+  document.getElementById('f-reason').value = '';
+  document.getElementById('f-date').value = today();
+  document.getElementById('add-overlay').classList.add('open');
+  setTimeout(() => document.getElementById('f-amount').focus(), 300);
+});
+
+document.getElementById('add-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('add-overlay')) document.getElementById('add-overlay').classList.remove('open');
+});
+
+document.getElementById('seg-mom').addEventListener('click', () => { selectedWho = 'mom'; updateSeg(); });
+document.getElementById('seg-bf').addEventListener('click',  () => { selectedWho = 'bf';  updateSeg(); });
+
+function updateSeg() {
+  document.getElementById('seg-mom').className = 'seg-btn mom' + (selectedWho === 'mom' ? ' active' : '');
+  document.getElementById('seg-bf').className  = 'seg-btn bf'  + (selectedWho === 'bf'  ? ' active' : '');
+}
+
+document.getElementById('add-confirm').addEventListener('click', () => {
+  const amt = parseFloat(document.getElementById('f-amount').value);
+  const reason = document.getElementById('f-reason').value.trim();
+  const date = document.getElementById('f-date').value;
+  if (!amt || amt <= 0) { document.getElementById('f-amount').focus(); return; }
+  records.push({ id: nextId++, who: selectedWho, amount: amt, reason, date, repayments: [] });
+  save(); render();
+  document.getElementById('add-overlay').classList.remove('open');
+});
+
+// ── repay sheet ───────────────────────────────────────
+function openRepay(id) {
+  repayTargetId = id;
+  const r = records.find(x => x.id === id);
+  document.getElementById('repay-title').textContent = `還款 — ${r.who === 'mom' ? '媽媽' : '男友'}`;
+  document.getElementById('r-amount').value = '';
+  document.getElementById('r-date').value = today();
+  document.getElementById('repay-overlay').classList.add('open');
+  setTimeout(() => document.getElementById('r-amount').focus(), 300);
+}
+
+document.getElementById('repay-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('repay-overlay')) document.getElementById('repay-overlay').classList.remove('open');
+});
+
+document.getElementById('repay-confirm').addEventListener('click', () => {
+  const amt = parseFloat(document.getElementById('r-amount').value);
+  const date = document.getElementById('r-date').value;
+  if (!amt || amt <= 0) return;
+  const r = records.find(x => x.id === repayTargetId);
+  if (!r) return;
+  r.repayments.push({ amount: amt, date });
+  save(); render();
+  document.getElementById('repay-overlay').classList.remove('open');
+});
+
+// ── delete sheet ──────────────────────────────────────
+function openDel(id) {
+  activeId = id;
+  const r = records.find(x => x.id === id);
+  document.getElementById('del-sub').textContent = `${r.reason || '無備註'} — ${fmt(r.amount)} 元`;
+  document.getElementById('del-overlay').classList.add('open');
+}
+document.getElementById('del-cancel').addEventListener('click', () => document.getElementById('del-overlay').classList.remove('open'));
+document.getElementById('del-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('del-overlay')) document.getElementById('del-overlay').classList.remove('open');
+});
+document.getElementById('del-confirm').addEventListener('click', () => {
+  records = records.filter(r => r.id !== activeId);
+  save(); render();
+  document.getElementById('del-overlay').classList.remove('open');
+});
+
+// ── export / import ───────────────────────────────────
+document.getElementById('export-btn').addEventListener('click', () => {
+  const blob = new Blob([JSON.stringify(records, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'debt_backup_' + today() + '.json'; a.click();
+  URL.revokeObjectURL(url);
+});
+
+document.getElementById('import-input').addEventListener('change', e => {
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if (!Array.isArray(data)) throw new Error();
+      if (!confirm(`匯入後會覆蓋目前 ${records.length} 筆，換成備份的 ${data.length} 筆，確定嗎？`)) return;
+      records = data;
+      nextId = records.reduce((m,r) => Math.max(m, r.id||0), 0) + 1;
+      save(); render();
+    } catch { alert('檔案格式不對，請選擇正確的備份檔案'); }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+});
+
+// ── init ──────────────────────────────────────────────
+render();
+</script>
+</body>
+</html>
